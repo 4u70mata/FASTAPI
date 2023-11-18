@@ -78,7 +78,7 @@ def get_latest_post():
     post = my_posts[len(my_posts)-1]
     return {"detail": post}
 
-@app.get("/posts/{id}") # {id}: id is a path parameter, returned as str
+@app.get("/posts/{id}",) # {id}: id is a path parameter, returned as str
 def get_post(id: int):
     """post = find_posts(id) # cast to int or use a hint
     if not post: 
@@ -102,21 +102,30 @@ def delete_post(id: int):
     # deleting post
     #find index in the array that has required ID
     #my_posts.pop(index)
-    index = find_index_post(id)
-    if index == None : 
+    #index = find_index_post(id)
+    
+    cursor.execute("""DELETE FROM posts WHERE id = %s returning *""", str(id))
+    deleted_post = cursor.fetchone()
+    connection.commit()
+    #print(deleted_post)
+    if deleted_post == None : 
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                             detail=f"post with id : {id} does not exist!")
     
-    my_posts.pop(index)
+    
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 @app.put("/posts/{id}")
 def update_post(id: int, post: Post):
-    index = find_index_post(id)
-    if index == None : 
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-                            detail=f"post with id : {id} does not exist!")
+    """index = find_index_post(id)
     post_dict = post.model_dump()
     post_dict["id"] = id
-    my_posts[index] = post_dict
-    return {"data": post_dict}    
+    my_posts[index] = post_dict"""
+    cursor.execute("""UPDATE posts SET title = %s, content = %s, published = %s  WHERE id = %s returning *""",(post.title, post.content, post.published, str(id)))
+    updated_post = cursor.fetchone()
+    connection.commit()
+    if updated_post == None : 
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                            detail=f"post with id : {id} does not exist!")
+
+    return {"data": updated_post}    
