@@ -79,14 +79,21 @@ def get_latest_post():
     return {"detail": post}
 
 @app.get("/posts/{id}") # {id}: id is a path parameter, returned as str
-def get_post(id: int, response: Response):
-    post = find_posts(id) # cast to int or use a hint
+def get_post(id: int):
+    """post = find_posts(id) # cast to int or use a hint
     if not post: 
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                             detail=f"post with id: {id} doesn't exist!")
         # HARD CODE / status value response.status_code = 404 , or : 
         #response.status_code = status.HTTP_404_NOT_FOUND
         # HARD CODE / return {"message": f"post with id: {id} doesn't exist!"}
+        """
+    cursor.execute("""SELECT * FROM posts WHERE id = (%s)""", str(id))
+    post = cursor.fetchone()
+    print(post)
+    if not post: 
+            raise HTTPException(status_code=status.HTTP_204_NO_CONTENT,
+                                detail = f"Post id : {id} was not found.")
     return {"post_detail":post}
 
 
