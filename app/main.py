@@ -3,6 +3,9 @@ from fastapi.params import Body
 from pydantic import BaseModel
 from typing import Optional 
 from random import randrange
+import psycopg2
+from psycopg2.extras import RealDictCursor
+import time
 
 app  = FastAPI()
 
@@ -11,6 +14,20 @@ class Post(BaseModel):
     content: str
     published: bool = True
     #rating: Optional[int] = None
+
+#Establish database connection : 
+while True: 
+    try :
+        connection = psycopg2.connect(host = 'localhost', database='fastapi', user   ='postgres', password = 'SAMISAMI123', cursor_factory=RealDictCursor)
+        cursor = connection.cursor()
+        print('Database connection was succesfull')
+        break
+    except Exception as error: 
+        print('Connection failed')
+        print(f"error : {error}")
+        time.sleep(2)
+
+
 
 # Array contain a bunsh of Post objects represented as dict 
 
@@ -39,14 +56,22 @@ def root():
 
 @app.get("/posts")
 def get_posts():
-    return {"data": my_posts} # serialize post containter to Json
+    posts = cursor.execute("""SELECT * FROM posts""")
+    posts = cursor.fetchall()
+    print(posts)
+    return {"data": posts} # serialize post containter to Json
 
 @app.post("/posts", status_code= status.HTTP_201_CREATED)
-def create_posts(new_post: Post):
-    post_dict = new_post.model_dump()
+def create_posts(post: Post):
+    """post_dict = new_post.model_dump()
     post_dict["id"] = randrange(0, 1000000)
-    my_posts.append(post_dict)
-    return {"data": post_dict} 
+    my_posts.append(post_dict)"""
+    cursor.execute("""INSERT INTO posts (title, content, published) VALUES (%s,%s,%s) RETURNING *""", 
+                   (post.title, post.content, post.published))
+    new_post = cursor.fetchone()
+    connection.commit()
+    return {"data": new_post}
+
 
 @app.get("/posts/latest") # order matters , before id to not cause type issues
 def get_latest_post(): 
