@@ -29,7 +29,7 @@ while True:
 
 
 
-# Array contain a bunsh of Post objects represented as dict 
+# Array contain a bunch of Post objects represented as dict 
 
 my_posts = [{"title": "title of post 1", 
              "content": "content of post 1",
